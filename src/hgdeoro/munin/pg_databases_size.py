@@ -34,7 +34,7 @@ def connect():
         import psycopg2
         return psycopg2.connect(conn_string)
     except ImportError:
-        import psycopg
+        import psycopg # pylint: disable=F0401
         return psycopg.connect(conn_string)
 
 def main():
@@ -53,21 +53,11 @@ def main():
     if "config" in sys.argv:
 
         print format_multiline("""
-            graph_title PostgreSql Database Size (in MiB)
-            graph_args -l 0 
-            graph_vlabel Size in MiB
+            graph_title PostgreSql Database Size (on disk)
+            graph_args --base 1024 -l 0 --vertical-label Bytes --upper-limit 3719946240
             graph_category postgresql
-            graph_period second
         """)
-        
-        #print format_multiline("""
-        #    graph_title PostgreSql Database Size (in MiB)
-        #    graph_args --upper-limit 100 -l 0
-        #    graph_vlabel %
-        #    graph_scale no
-        #    graph_category disk
-        #""")
-
+    
     for db_name in [row[0] for row in records]:
         cursor.execute("SELECT pg_database_size(%s)", [db_name])
         db_size = cursor.fetchall()[0][0]
@@ -78,10 +68,10 @@ def main():
             print format_multiline("""
                 %(db_name)s.label %(db_name)s
                 %(db_name)s.type GAUGE
-                %(db_name)s.max 20480
             """ % { 'db_name': db_name })
+            # %(db_name)s.max 20480
         else:
-            print "%s.value %d" % (db_name, int(db_size/(1024*1024)), )
+            print "%s.value %d" % (db_name, db_size, )
 
 if __name__ == '__main__':
     main()
