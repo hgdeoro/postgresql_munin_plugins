@@ -11,7 +11,6 @@ Based on a plugin (postgres_block_read_) from Bj.rn Ruberg <bjorn@linpro.no>
 
 import os
 import pprint
-import psycopg2
 import sys
 
 def format_multiline(multi_line_string):
@@ -31,8 +30,12 @@ def connect():
     conn_string = "host='%s' dbname='%s' user='%s' port='%s' password='%s'" % (
         pg_host, pg_db_connect, pg_user, pg_port, pg_passwd, )
     
-    conn = psycopg2.connect(conn_string)
-    return conn
+    try:
+        import psycopg2
+        return psycopg2.connect(conn_string)
+    except ImportError:
+        import psycopg
+        return psycopg.connect(conn_string)
 
 def main():
     """
