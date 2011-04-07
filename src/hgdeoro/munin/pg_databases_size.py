@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 PostgreSql Database Size plugin for Munin
 Copyright Horacio G. de Oro <hgdeoro@gmail.com> 2011
