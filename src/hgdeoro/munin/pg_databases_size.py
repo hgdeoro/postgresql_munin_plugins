@@ -44,7 +44,7 @@ def main():
     debug = bool("--debug" in sys.argv)
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("select datname from pg_database")
+    cursor.execute("select datname from pg_database order by datname")
     records = cursor.fetchall()
     
     if debug:
