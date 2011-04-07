@@ -7,6 +7,27 @@ Licenced under GPL v2.
 
 Based on a plugin (pg__db_size) from  Dalibo <cedric.villemain@dalibo.com>
 Based on a plugin (postgres_block_read_) from Bj.rn Ruberg <bjorn@linpro.no> 
+
+To install (in default locations of Ubuntu 10.04):
+
+    ln -s /dir/dir/dir/path/to/pg_databases_size.py /etc/munin/plugins/pg_databases_size
+
+To setup host, port, username, password, to which db to connect,
+in '/etc/munin/plugin-conf.d/munin-node' (default location in Ubuntu):
+
+    [pg_databases_size]
+    env.pg_host localhost
+    env.pg_port 5432
+    env.pg_db_connect template1
+    env.pg_user postgres
+    env.pg_passwd <NO DEFAULT>
+
+The only needed line is 'env.pg_passwd'.
+
+The list of databases to ignore could be specified with 'env.pg_ignore_db', separated by commas:
+
+    env.pg_ignore_db db_to_ignore,postgresql,template0,db2,db3
+
 """
 
 import os
@@ -47,6 +68,9 @@ def main():
     cursor.execute("select datname from pg_database order by datname")
     records = cursor.fetchall()
     
+    ignored_db_names = os.environ.get('pg_ignore_db', '')
+    ignored_db_names = [line.strip() for line in ignored_db_names.split(',') if line.strip()]
+    
     if debug:
         pprint.pprint(records)
 
@@ -58,7 +82,7 @@ def main():
             graph_category postgresql
         """)
     
-    for db_name in [row[0] for row in records]:
+    for db_name in [row[0] for row in records if not row[0] in ignored_db_names]:
         cursor.execute("SELECT pg_database_size(%s)", [db_name])
         db_size = cursor.fetchall()[0][0]
         if debug:
