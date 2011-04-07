@@ -35,7 +35,7 @@ import os.path
 import sys
 
 # Setup PYTHONPATH
-BASE_DIR = os.path.split(__file__)[0] # BASE_DIR/hgdeoro/munin
+BASE_DIR = os.path.split(os.path.realpath(__file__))[0] # BASE_DIR/hgdeoro/munin
 BASE_DIR = os.path.split(BASE_DIR)[0] # BASE_DIR/hgdeoro
 BASE_DIR = os.path.split(BASE_DIR)[0] # BASE_DIR
 sys.path.append(os.path.abspath(BASE_DIR))
