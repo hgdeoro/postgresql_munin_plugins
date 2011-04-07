@@ -6,6 +6,21 @@ Licenced under GPL v2.
 
 import os
 
+def get_pg_ignore_db():
+    """Returns a list of db to ignore"""
+    ignored_db_names = os.environ.get('pg_ignore_db', '')
+    ignored_db_names = [line.strip() for line in ignored_db_names.split(',') if line.strip()]
+    return ignored_db_names
+
+def get_dbs_to_monitor(cursor):
+    """Returns the list of db to monitor"""
+    cursor.execute("select datname from pg_database order by datname")
+    records = cursor.fetchall()
+    
+    ignored_db_names = get_pg_ignore_db()
+    
+    return [row[0] for row in records if not row[0] in ignored_db_names]
+
 def format_multiline(multi_line_string):
     """Returns a new string, with NO emtpy lines, and with each line trim()'ed"""
     multi_line_string = multi_line_string.strip()

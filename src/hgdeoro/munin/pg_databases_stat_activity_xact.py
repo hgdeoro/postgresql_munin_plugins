@@ -10,12 +10,13 @@ Based on a plugin (postgres_block_read_) from Bj.rn Ruberg <bjorn@linpro.no>
 
 To install (in default locations of Ubuntu 10.04):
 
-    ln -s /dir/dir/dir/path/to/pg_databases_size.py /etc/munin/plugins/pg_databases_size
+    ln -s /dir/dir/dir/path/to/pg_databases_stat_activity_xact.py \
+        /etc/munin/plugins/pg_databases_stat_activity_xact
 
 To setup host, port, username, password, to which db to connect,
 in '/etc/munin/plugin-conf.d/munin-node' (default location in Ubuntu):
 
-    [pg_databases_size]
+    [pg_databases_stat_activity_xact]
     env.pg_host localhost
     env.pg_port 5432
     env.pg_db_connect template1
@@ -52,22 +53,35 @@ def main():
     if "config" in sys.argv:
 
         print format_multiline("""
-            graph_title PostgreSql Database Size (on disk)
-            graph_args --base 1024 -l 0 --vertical-label Bytes --upper-limit 3719946240
+            graph_title PostgreSql Commits and Rollbacks
+            graph_args -l 0 --vertical-label Tx
             graph_category postgresql
         """)
     
-    for db_name in get_dbs_to_monitor(cursor):
-        cursor.execute("SELECT pg_database_size(%s)", [db_name])
-        db_size = cursor.fetchall()[0][0]
+    dbs_to_monitor = get_dbs_to_monitor(cursor)
+    
+    cursor.execute("SELECT datname, datid, xact_commit, xact_rollback FROM pg_stat_database " + \
+        "ORDER BY datname")
+    
+    for datname, datid, xact_commit, xact_rollback in cursor.fetchall(): # pylint: disable=W0612
+        
+        if not datname in dbs_to_monitor:
+            continue
         
         if "config" in sys.argv:
             print format_multiline("""
-                %(db_name)s.label %(db_name)s
-                %(db_name)s.type GAUGE
-            """ % { 'db_name': db_name })
+                %(db_name)s_xact_commit.label Tx commited in %(db_name)s
+                %(db_name)s_xact_commit.type DERIVE
+                %(db_name)s_xact_commit.min 0
+                %(db_name)s_xact_rollback.label Tx rollbacked in %(db_name)s
+                %(db_name)s_xact_rollback.type DERIVE
+                %(db_name)s_xact_rollback.min 0
+            """ % { 'db_name': datname })
         else:
-            print "%s.value %d" % (db_name, db_size, )
+            print format_multiline("""
+                %(db_name)s_xact_commit %(xact_commit)d
+                %(db_name)s_xact_rollback %(xact_rollback)d
+            """ % { 'db_name': datname, 'xact_commit': xact_commit, 'xact_rollback': xact_rollback})
 
 if __name__ == '__main__':
     main()
