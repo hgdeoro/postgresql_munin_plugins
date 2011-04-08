@@ -7,27 +7,6 @@ Licenced under GPL v2.
 
 Based on a plugin (pg__db_size) from  Dalibo <cedric.villemain@dalibo.com>
 Based on a plugin (postgres_block_read_) from Bj.rn Ruberg <bjorn@linpro.no> 
-
-To install (in default locations of Ubuntu 10.04):
-
-    ln -s /dir/dir/dir/path/to/pg_databases_size.py /etc/munin/plugins/pg_databases_size
-
-To setup host, port, username, password, to which db to connect,
-in '/etc/munin/plugin-conf.d/munin-node' (default location in Ubuntu):
-
-    [pg_databases_size]
-    env.pg_host localhost
-    env.pg_port 5432
-    env.pg_db_connect template1
-    env.pg_user postgres
-    env.pg_passwd <NO DEFAULT>
-
-The only needed line is 'env.pg_passwd'.
-
-The list of databases to ignore could be specified with 'env.pg_ignore_db', separated by commas:
-
-    env.pg_ignore_db db_to_ignore,postgresql,template0,db2,db3
-
 """
 
 import os
