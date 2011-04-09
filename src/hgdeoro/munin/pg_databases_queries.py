@@ -33,25 +33,27 @@ def main():
             graph_category postgresql
             running.label Number of running queries (including locked)
             running.type GAUGE
-            locks.label Number of locked queries
-            locks.type GAUGE
+            granted_locks.label Number of granted locks
+            granted_locks.type GAUGE
+            non_granted_locks.label Number of tx waiting for locks
+            non_granted_locks.type GAUGE
         """)
         return
     
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT datid, datname, waiting, EXTRACT(EPOCH FROM (now()-query_start)) " + \
-        "FROM pg_stat_activity")
+    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity")
+    running_count = cursor.fetchone()[0]
     
-    running_count = 0
-    locks_count = 0
-    for datid, datname, waiting, wait_in_seconds in cursor.fetchall(): # pylint: disable=W0612
-        running_count = running_count + 1
-        if waiting:
-            locks_count = locks_count + 1
+    cursor.execute("SELECT COUNT(*) FROM pg_locks WHERE granted IS TRUE")
+    granted_locks = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM pg_locks WHERE granted IS FALSE")
+    non_granted_locks = cursor.fetchone()[0]
     
     print "running.value %d" % running_count
-    print "locks.value %d" % locks_count
+    print "granted_locks.value %d" % granted_locks
+    print "non_granted_locks.value %d" % non_granted_locks
 
 if __name__ == '__main__':
     main()
