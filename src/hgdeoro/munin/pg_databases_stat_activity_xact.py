@@ -7,28 +7,6 @@ Licenced under GPL v2.
 
 Based on a plugin (pg__db_size) from  Dalibo <cedric.villemain@dalibo.com>
 Based on a plugin (postgres_block_read_) from Bj.rn Ruberg <bjorn@linpro.no> 
-
-To install (in default locations of Ubuntu 10.04):
-
-    ln -s /dir/dir/dir/path/to/pg_databases_stat_activity_xact.py \
-        /etc/munin/plugins/pg_databases_stat_activity_xact
-
-To setup host, port, username, password, to which db to connect,
-in '/etc/munin/plugin-conf.d/munin-node' (default location in Ubuntu):
-
-    [pg_databases_stat_activity_xact]
-    env.pg_host localhost
-    env.pg_port 5432
-    env.pg_db_connect template1
-    env.pg_user postgres
-    env.pg_passwd <NO DEFAULT>
-
-The only needed line is 'env.pg_passwd'.
-
-The list of databases to ignore could be specified with 'env.pg_ignore_db', separated by commas:
-
-    env.pg_ignore_db db_to_ignore,postgresql,template0,db2,db3
-
 """
 
 import os
@@ -43,6 +21,8 @@ sys.path.append(os.path.abspath(BASE_DIR))
 
 from hgdeoro.munin import format_multiline, connect, get_dbs_to_monitor
 
+# FIXME: check that fieldnames contains only valid values
+
 def main():
     """
     Main method.
@@ -51,10 +31,10 @@ def main():
     cursor = conn.cursor()
     
     if "config" in sys.argv:
-
+        # graph_args -l 0 --vertical-label Tx --base 1000
+        # graph_vlabel (+) commits / (-) rollbacks per seccond
         print format_multiline("""
             graph_title PostgreSql Commits and Rollbacks
-            graph_args -l 0 --vertical-label Tx
             graph_category postgresql
         """)
     
@@ -68,20 +48,31 @@ def main():
         if not datname in dbs_to_monitor:
             continue
         
+        var_commit = "%s_ct" % datname
+        var_rb = "%s_rb" % datname
         if "config" in sys.argv:
             print format_multiline("""
-                %(db_name)s_xact_commit.label Tx commited in %(db_name)s
-                %(db_name)s_xact_commit.type DERIVE
-                %(db_name)s_xact_commit.min 0
-                %(db_name)s_xact_rollback.label Tx rollbacked in %(db_name)s
-                %(db_name)s_xact_rollback.type DERIVE
-                %(db_name)s_xact_rollback.min 0
-            """ % { 'db_name': datname })
+                %(var_commit)s.label commits
+                %(var_commit)s.draw LINE
+                %(var_commit)s.type DERIVE
+                %(var_commit)s.min 0
+                %(var_commit)s.info Transactions committed in database
+                %(var_commit)s.negative %(var_rb)s
+                
+                %(var_rb)s.label rollbacks
+                %(var_rb)s.graph no
+                %(var_rb)s.draw LINE
+                %(var_rb)s.type DERIVE
+                %(var_rb)s.min 0
+                %(var_rb)s.info Transactions rolled back in database
+            """ % { 'db_name': datname, 'var_commit': var_commit, 'var_rb': var_rb })
+            
         else:
             print format_multiline("""
-                %(db_name)s_xact_commit %(xact_commit)d
-                %(db_name)s_xact_rollback %(xact_rollback)d
-            """ % { 'db_name': datname, 'xact_commit': xact_commit, 'xact_rollback': xact_rollback})
+                %(var_commit)s.value %(xact_commit)d
+                %(var_rb)s.value %(xact_rollback)d
+            """ % { 'db_name': datname, 'xact_commit': xact_commit, 'xact_rollback': xact_rollback,
+                'var_commit': var_commit, 'var_rb': var_rb})
 
 if __name__ == '__main__':
     main()
