@@ -52,19 +52,15 @@ def main():
         var_rb = "%s_rb" % datname
         if "config" in sys.argv:
             print format_multiline("""
-                %(var_commit)s.label commits
+                %(var_commit)s.label %(db_name)s commits
                 %(var_commit)s.draw LINE
                 %(var_commit)s.type DERIVE
                 %(var_commit)s.min 0
-                %(var_commit)s.info Transactions committed in database
-                %(var_commit)s.negative %(var_rb)s
                 
-                %(var_rb)s.label rollbacks
-                %(var_rb)s.graph no
+                %(var_rb)s.label %(db_name)s rollbacks
                 %(var_rb)s.draw LINE
                 %(var_rb)s.type DERIVE
                 %(var_rb)s.min 0
-                %(var_rb)s.info Transactions rolled back in database
             """ % { 'db_name': datname, 'var_commit': var_commit, 'var_rb': var_rb })
             
         else:
